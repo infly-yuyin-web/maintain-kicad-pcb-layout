@@ -1,0 +1,4 @@
+interface:
+  display_name: "KiCad PCB Layout 維護"
+  short_description: "檢查通用 KiCad PCB 的板層、電源與訊號走線"
+  default_prompt: "使用 $maintain-kicad-pcb-layout 檢查目前 KiCad PCB Layout 的板層、VDD 電源及訊號與電源分配走線。"
