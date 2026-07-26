@@ -1,4 +1,4 @@
 interface:
   display_name: "KiCad PCB Layout 維護"
-  short_description: "檢查 KiCad PCB 的板層、電源、訊號與 LCSC 料件"
-  default_prompt: "使用 $maintain-kicad-pcb-layout 檢查目前 KiCad PCB Layout 的板層、VDD 電源及訊號與電源分配走線；推薦料件時只查 LCSC，並依審查輪次執行對應範圍。"
+  short_description: "檢查 KiCad PCB 的走線、TVS、bead 與 LCSC BOM"
+  default_prompt: "使用 $maintain-kicad-pcb-layout 檢查目前 KiCad PCB Layout 的板層、電源、TVS、bead 及訊號走線；推薦料件時只查 LCSC，並依第一次、完整或調整後審查模式控制範圍。"
