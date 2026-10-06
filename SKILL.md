@@ -123,6 +123,38 @@ description: 通用 KiCad PCB Layout 檢查與維護技能，依實際 .kicad_pc
 4. 取得確認後，只刪除已確認的完整孤立走線鏈；不要以批次選取或長度門檻順便刪除其他走線，也不要刪除只有一端未連接但可能是待完成、stub 或功能性結構的走線。
 5. 清除後重新 refill zone，執行 DRC、未連接項目與受影響 net 的連通性檢查，比較刪除前後的走線鏈數量、違規與未佈線數量，並確認沒有合法訊號、電源、GND、RF 或測試路徑被改變。
 
+## 元件特定製造設定
+
+只有在目前設計實際使用下列元件時才套用；reference 依實際設計為準（下文以 `U1` 舉例）。以下設定來自已驗證的專案，但不代表原廠建議焊盤圖；取得原廠 land pattern 時以原廠為準並指出差異。
+
+### onsemi FAN3852（FAN3852UC16X，WLCSP-6，0.4 mm ball pitch）
+
+來源：2026-10-06～07 FAN3852_EVB_V1.1 審查與修改（GitHub `infly-yuyin-web/FAN3852-EVB`，腳本 `tools/set_u1_paste_apertures.py`、`tools/set_u1_mask_nsmd.py`，以 reference `U1` 尋找元件，reference 不同時需調整）。
+
+1. 焊盤、阻焊與鋼網：
+
+   | 層 | 設定 | 理由 |
+   |---|---|---|
+   | F.Cu 銅箔焊盤 | Ø0.20 mm 圓形，維持圓形，不改成方形 | 配合錫球、自我對位與橋接風險；未取得 onsemi case 567TS 建議焊盤前不要改銅箔尺寸 |
+   | F.Mask 阻焊 | NSMD，六顆焊盤各自阻焊外擴 +0.04 mm（開窗 Ø0.28 mm，阻焊橋 0.12 mm） | 外擴 0 時阻焊對位誤差會蓋到焊盤邊緣，造成空焊 |
+   | F.Paste 鋼網 | 銅箔焊盤移除 F.Paste 層；在每顆錫球中心另放只有 F.Paste 層、沒有編號與網路的 0.25 × 0.25 mm roundrect 開孔（圓角比例 0.25） | Ø0.20 圓形開孔在 0.10 mm 鋼網的面積比只有 0.50；0.25 方形開孔為 0.63（0.10 mm）、0.78（0.08 mm），目標 ≥ 0.66 |
+
+2. 修改後驗證：
+   - 匯出修改前後的 F.Cu、F.Mask、F.Paste Gerber 比對：F.Cu 不變；F.Mask、F.Paste 只有 FAN3852 的六個開口改變。
+   - 阻焊開窗邊緣到其他網路銅箔至少 0.15 mm（原專案為 0.16 mm），不得露出其他網路銅箔；DRC 不得出現 `solder_mask_bridge`。
+   - 修改只存在於板上的 footprint，會新增一筆 `lib_footprint_mismatch`；提醒使用者不要對該元件執行「從庫更新 footprint」，否則設定會被覆蓋，或改為更新零件庫 footprint。
+3. JLCPCB 下單：
+   - 必須選 Standard PCBA（Economic PCBA 的 BGA 最小球距為 0.5 mm）。
+   - PCBA 訂單的鋼網由 JLC 製作，CAM 預設會依腳距修改 paste 開孔；在訂單備註要求依 paste 層開孔、鋼網 ≤ 0.10 mm、對 FAN3852 做 X-ray，並說明阻焊橋 0.12 mm 做不到時可接受整顆共用開窗。
+4. 電路與佈局檢查重點（FAN3852 datasheet）：
+   - VDD 1.64–3.63 V；0.1 µF 去耦緊靠 VDD ball；元件下方不放 VDD plane。
+   - CLOCK、SELECT、DATA 絕對最大值為 VDD + 0.3 V；主機 I/O 電壓必須與 FAN3852 VDD 相容，DATA VOH 最小 0.65 × VDD，需確認主機 VIH。
+   - SELECT 不可浮接（接 GND：DATA 在 CLOCK 下降沿有效；接 VDD：上升沿）。
+   - INPUT 阻抗 > 10 GΩ、ESD 僅 ±1.5 kV HBM、絕對最大值 −0.3～2.2 V、過載點 448 mVpp；輸入耦合電容 1 nF、低漏電（NP0）。若輸入接外部連接器，建議在耦合電容之前加非 snap-back 的雙向 ESD 元件；料號依「料件推薦規則」重新到 LCSC 官網查證。
+   - datasheet 建議在驅動 CLOCK 的主機端串聯 100 Ω。
+   - 回焊後必須清除助焊劑（高阻抗輸入）。
+   - 電源軌 TVS 不可使用 snap-back 型資料線 ESD 元件。
+
 ## 修改與驗證
 
 - 保持修改局部化，不重排無關元件、走線、文字、zone 或目錄結構。
